@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -17,7 +16,6 @@ import Card from '../components/Card';
 import Dropdown from '../components/Dropdown';
 import Input from '../components/Input';
 import Screen from '../components/Screen';
-import MapPicker from '../components/MapPicker';
 import GlassHeader from '../components/GlassHeader';
 
 import {AuthContext} from '../contexts/AuthContext';
@@ -201,16 +199,6 @@ export default function PickupRequestScreen({navigation}) {
       setFetchingLocation(false);
       ui?.setLoading?.(false);
     }
-  }
-
-  function openMap() {
-    if (!coords) return;
-    const lat = coords.latitude;
-    const lng = coords.longitude;
-    const url = `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
-    Linking.openURL(url).catch(() => {
-      // ignore
-    });
   }
 
   function validate() {
@@ -401,22 +389,11 @@ export default function PickupRequestScreen({navigation}) {
                   <Text style={styles.coords}>
                     Location set: {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}
                   </Text>
-                  <View style={{marginTop: theme.spacing.sm}}>
-                    <Button label="Open in Maps" variant="secondary" onPress={openMap} />
-                  </View>
                 </View>
               ) : null}
 
-              <MapPicker
-                value={coords}
-                onChange={(next) => {
-                  setCoords(next);
-                }}
-                onAddressChange={(nextAddr) => {
-                  if (!nextAddr) return;
-                  setAddress(String(nextAddr));
-                }}
-              />
+              {/* Map disabled (prevents crashes / Google Maps dependency). */}
+              <View style={styles.mapBlank} />
             </Card>
 
             <Card>
@@ -455,6 +432,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: 1,
+  },
+  mapBlank: {
+    marginTop: theme.spacing.md,
+    height: 180,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   chipOn: {backgroundColor: 'rgba(37, 211, 102, 0.12)', borderColor: 'rgba(37, 211, 102, 0.35)'},
   chipOff: {backgroundColor: theme.colors.bgSoft, borderColor: theme.colors.border},

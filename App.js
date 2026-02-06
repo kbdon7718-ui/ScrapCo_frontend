@@ -14,6 +14,7 @@ import {StyleSheet, View} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import { AuthProvider } from './contexts/AuthContext';
 import { UiStatusProvider } from './contexts/UiStatusContext';
 import {PreferencesProvider, PreferencesContext} from './contexts/PreferencesContext';
@@ -103,13 +104,17 @@ function ProfileStackScreen() {
 function MainTabs() {
   const prefs = useContext(PreferencesContext);
   const colors = useMemo(() => getAppColors(prefs?.resolvedTheme || 'light'), [prefs?.resolvedTheme]);
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: [styles.tabBar, {backgroundColor: colors.card, shadowColor: colors.shadow}],
+        tabBarStyle: [
+          styles.tabBar,
+          {backgroundColor: colors.card, shadowColor: colors.shadow, bottom: 14 + (insets?.bottom || 0)},
+        ],
         tabBarIcon: ({focused, color, size}) => {
           return (
             <View style={[styles.tabPill, focused && styles.tabPillActive]}>
@@ -205,14 +210,16 @@ function AppNavigation() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <UiStatusProvider>
-        <PreferencesProvider>
-          <AppChrome>
-            <AppNavigation />
-          </AppChrome>
-        </PreferencesProvider>
-      </UiStatusProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <UiStatusProvider>
+          <PreferencesProvider>
+            <AppChrome>
+              <AppNavigation />
+            </AppChrome>
+          </PreferencesProvider>
+        </UiStatusProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

@@ -2,7 +2,6 @@ import React, {useContext, useEffect, useMemo, useState} from 'react';
 import {ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import GlassHeader from '../components/GlassHeader';
-import MapPlaceholder from '../components/MapPlaceholder';
 import HeroCard from '../components/HeroCard';
 import QuickActionGrid from '../components/QuickActionGrid';
 import PickupCartModal from '../components/PickupCartModal';
@@ -215,17 +214,8 @@ export default function HomeScreenV2({navigation}) {
         {/* Glass Header */}
         <GlassHeader title="ScrapCo" status={shortAddress(liveAddress) || statusMsg} />
 
-        {/* Live Tracker Map */}
-        <MapPlaceholder
-          coords={liveCoords}
-          active={hasActivePickup}
-          address={shortAddress(liveAddress)}
-          loading={loadingLive}
-          onPressEnableLocation={refreshLiveLocation}
-          onPressSend={() => {
-            // no dummy actions; keep as a no-op for now
-          }}
-        />
+        {/* Live Tracker Map (disabled to prevent crashes / maps dependency). */}
+        <View style={styles.mapBlank} />
 
         {/* Hero Card for Instant Pickup */}
         <HeroCard
@@ -292,6 +282,15 @@ export default function HomeScreenV2({navigation}) {
 }
 
 const styles = StyleSheet.create({
+  mapBlank: {
+    height: 230,
+    marginTop: theme.spacing.md,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   activeCard: {
     backgroundColor: 'rgba(16, 185, 129, 0.08)',
     borderWidth: 1,

@@ -1,34 +1,32 @@
-// Expo config with env support.
-// This lets you keep Google Maps keys out of source control by setting them in frontend/.env
+// Expo dynamic config.
+// IMPORTANT: this repo includes native folders (android/). To keep builds stable,
+// avoid defining native config props here (ios/android/plugins/icon/splash/etc),
+// because they won't be auto-synced into the native projects.
 
 import 'dotenv/config';
 
-const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || undefined;
-
 export default ({config}) => {
+  const expo = config?.expo || {};
+
+  // Strip native-managed fields when native folders are present.
+  // (They remain defined in app.json / native projects, but expo-doctor expects
+  // the dynamic config output to avoid these properties.)
+  // eslint-disable-next-line no-unused-vars
+  const {plugins, ios, android, orientation, icon, userInterfaceStyle, splash, ...restExpo} = expo;
+
+  const apiBase = process.env.EXPO_PUBLIC_API_BASE;
+  const easProjectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+
   return {
     ...config,
     expo: {
-      ...(config.expo || {}),
+      ...restExpo,
       extra: {
-        ...(config.expo?.extra || {}),
-        googleMapsApiKey,
-      },
-      ios: {
-        ...(config.expo?.ios || {}),
-        config: {
-          ...(config.expo?.ios?.config || {}),
-          googleMapsApiKey,
-        },
-      },
-      android: {
-        ...(config.expo?.android || {}),
-        config: {
-          ...(config.expo?.android?.config || {}),
-          googleMaps: {
-            ...(config.expo?.android?.config?.googleMaps || {}),
-            apiKey: googleMapsApiKey,
-          },
+        ...(restExpo.extra || {}),
+        ...(apiBase ? {apiBase} : {}),
+        eas: {
+          ...(restExpo.extra?.eas || {}),
+          ...(easProjectId ? {projectId: easProjectId} : {}),
         },
       },
     },
