@@ -113,15 +113,11 @@ function MainTabs() {
         tabBarShowLabel: false,
         tabBarStyle: [
           styles.tabBar,
-<<<<<<< HEAD
           {
             backgroundColor: colors.card,
             shadowColor: colors.shadow,
             bottom: 14 + (insets?.bottom || 0),
           },
-=======
-          {backgroundColor: colors.card, shadowColor: colors.shadow, bottom: 14 + (insets?.bottom || 0)},
->>>>>>> 9cb2e93950d01b5fd70745293e347ad295f5c8ef
         ],
         tabBarIcon: ({focused, color, size}) => {
           return (
