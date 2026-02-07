@@ -9,3 +9,13 @@ export function getGoogleMapsApiKey() {
 
   return '';
 }
+
+export function getApiBase() {
+  const fromProcess = String(process?.env?.EXPO_PUBLIC_API_BASE || '').trim();
+  if (fromProcess) return fromProcess.replace(/\/+$/, '');
+
+  const fromExtra = String(Constants?.expoConfig?.extra?.apiBase || '').trim();
+  if (fromExtra) return fromExtra.replace(/\/+$/, '');
+
+  return '';
+}

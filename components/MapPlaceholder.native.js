@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef} from 'react';
-import {ActivityIndicator, Animated, Pressable, StyleSheet, Text, View} from 'react-native';
-import MapView, {Marker} from 'react-native-maps';
+import {ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, View} from 'react-native';
+import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
 import {theme} from '../theme';
 import {MapPin, Navigation2} from 'lucide-react-native';
 
@@ -47,7 +47,10 @@ export default function MapPlaceholder({
       {region ? (
         <MapView
           style={StyleSheet.absoluteFill}
-          initialRegion={region}
+          region={region}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+          liteMode={Platform.OS === 'android'}
+          loadingEnabled
           scrollEnabled={false}
           zoomEnabled={false}
           rotateEnabled={false}

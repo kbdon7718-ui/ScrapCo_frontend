@@ -148,6 +148,8 @@ export default function PickupStatusScreen({navigation, route}) {
       ? 'Finding a nearby vendor…'
       : status === 'ASSIGNED'
         ? 'Pickup confirmed'
+        : status === 'ON_THE_WAY'
+          ? 'Vendor is on the way'
         : status === 'NO_VENDOR_AVAILABLE'
           ? 'No vendor available right now'
           : status === 'COMPLETED'
@@ -194,6 +196,31 @@ export default function PickupStatusScreen({navigation, route}) {
             {normalized.status === 'ASSIGNED' ? (
               <View style={{marginTop: theme.spacing.md}}>
                 <Text style={styles.p}>A vendor has accepted your pickup.</Text>
+                <View style={{marginTop: theme.spacing.md}}>
+                  <Text style={styles.kv}>Vendor: {normalized.vendorRef ? String(normalized.vendorRef) : 'Assigned'}</Text>
+                  <Text style={styles.kv}>Time slot: {normalized.timeSlot || '—'}</Text>
+                  <Text style={styles.kv} numberOfLines={3}>
+                    Address: {normalized.address || '—'}
+                  </Text>
+                </View>
+
+                <View style={{marginTop: theme.spacing.md}}>
+                  <Button label="Cancel pickup" onPress={onCancelPickup} variant="danger" />
+                </View>
+
+                <View style={{marginTop: theme.spacing.sm}}>
+                  <Button
+                    label="Request another pickup"
+                    onPress={() => navigation.navigate('SchedulePickup')}
+                    variant="secondary"
+                  />
+                </View>
+              </View>
+            ) : null}
+
+            {normalized.status === 'ON_THE_WAY' ? (
+              <View style={{marginTop: theme.spacing.md}}>
+                <Text style={styles.p}>Your vendor is on the way.</Text>
                 <View style={{marginTop: theme.spacing.md}}>
                   <Text style={styles.kv}>Vendor: {normalized.vendorRef ? String(normalized.vendorRef) : 'Assigned'}</Text>
                   <Text style={styles.kv}>Time slot: {normalized.timeSlot || '—'}</Text>

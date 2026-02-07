@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   Alert,
   FlatList,
@@ -27,6 +27,50 @@ function colorForNameKey(nameKey) {
 export default function PickupCartModal({visible, onClose, rates = [], onConfirm, loading = false}) {
   const [cart, setCart] = useState([]);
   const [weights, setWeights] = useState({});
+
+  function sanitizeWeightInput(val) {
+    const raw = String(val ?? '').trim();
+    if (!raw) return '';
+
+    // Some keyboards use comma as decimal separator. Treat ',' as '.'.
+    const normalized = raw.replace(/,/g, '.');
+    let cleaned = normalized
+      .replace(/[^0-9.]/g, '')
+      .replace(/\.(?=.*\.)/g, '');
+
+    if (!cleaned) return '';
+    if (cleaned === '.') return '0.';
+
+    const [intPart, decPart] = cleaned.split('.');
+    cleaned = decPart != null ? `${intPart}.${decPart.slice(0, 2)}` : intPart;
+
+    const n = Number(cleaned);
+    if (!Number.isFinite(n)) return '';
+    const capped = Math.max(0, Math.min(500, n));
+
+    // Preserve a trailing '.' while typing (e.g. "12.").
+    if (normalized.endsWith(',') || normalized.endsWith('.')) {
+      return `${Math.trunc(capped)}.`;
+    }
+
+    // Keep up to 2 decimals, but avoid trailing zeros.
+    const fixed = capped % 1 === 0 ? String(Math.trunc(capped)) : capped.toFixed(2);
+    return fixed.replace(/\.?0+$/, '');
+  }
+
+  function formatKg(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num) || num <= 0) return '0';
+    const fixed = num % 1 === 0 ? String(Math.trunc(num)) : num.toFixed(2);
+    return fixed.replace(/\.?0+$/, '');
+  }
+
+  useEffect(() => {
+    if (visible) {
+      setCart([]);
+      setWeights({});
+    }
+  }, [visible]);
 
   const rateById = useMemo(() => {
     const map = new Map();
@@ -60,7 +104,14 @@ export default function PickupCartModal({visible, onClose, rates = [], onConfirm
   }
 
   function setWeight(catId, val) {
-    setWeights((prev) => ({...prev, [catId]: val}));
+    const cleaned = sanitizeWeightInput(val);
+    setWeights((prev) => ({...prev, [catId]: cleaned}));
+  }
+
+  function bumpWeight(catId, delta) {
+    const current = Number(weights[catId] || 0);
+    const next = Math.max(0, Math.min(500, Math.round((current + delta) * 10) / 10));
+    setWeights((prev) => ({...prev, [catId]: next ? String(next) : ''}));
   }
 
   const estimate = useMemo(() => {
@@ -115,7 +166,7 @@ export default function PickupCartModal({visible, onClose, rates = [], onConfirm
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Category Grid */}
-          <Text style={styles.sectionTitle}>1. Select types</Text>
+          <Text style={styles.sectionTitle}>Select scrap types</Text>
           <View style={styles.grid}>
             {categories.map((cat) => {
               const selected = cart.some((c) => c.id === cat.id);
@@ -137,20 +188,34 @@ export default function PickupCartModal({visible, onClose, rates = [], onConfirm
           {/* Weight Entry */}
           {cart.length > 0 ? (
             <View style={{marginTop: theme.spacing.lg}}>
-              <Text style={styles.sectionTitle}>2. Enter weights (kg)</Text>
+              <Text style={styles.sectionTitle}>Enter estimated weight (kg)</Text>
               {cart.map((c) => (
                 <View key={c.id} style={styles.weightRow}>
                   <View style={{flex: 1}}>
                     <Text style={styles.weightLabel}>{c.name}</Text>
                       <Text style={styles.weightRate}>₹{rateById.get(String(c.id)) || 0}/kg</Text>
                   </View>
-                  <TextInput
-                    style={styles.weightInput}
-                    placeholder="0"
-                    keyboardType="decimal-pad"
-                    value={weights[c.id] || ''}
-                    onChangeText={(val) => setWeight(c.id, val)}
-                  />
+                  <View style={styles.weightControls}>
+                    <Pressable onPress={() => bumpWeight(c.id, -0.5)} style={[styles.stepBtn, styles.stepBtnOff]}>
+                      <Text style={styles.stepBtnText}>−</Text>
+                    </Pressable>
+
+                    <View style={styles.weightInputWrap}>
+                      <TextInput
+                        style={styles.weightInput}
+                        placeholder="0"
+                        keyboardType="decimal-pad"
+                        value={weights[c.id] || ''}
+                        onChangeText={(val) => setWeight(c.id, val)}
+                        returnKeyType="done"
+                      />
+                      <Text style={styles.kgSuffix}>kg</Text>
+                    </View>
+
+                    <Pressable onPress={() => bumpWeight(c.id, 0.5)} style={[styles.stepBtn, styles.stepBtnOn]}>
+                      <Text style={styles.stepBtnText}>+</Text>
+                    </Pressable>
+                  </View>
                 </View>
               ))}
 
@@ -161,7 +226,7 @@ export default function PickupCartModal({visible, onClose, rates = [], onConfirm
               </View>
 
               {/* Cart List */}
-              <Text style={[styles.sectionTitle, {marginTop: theme.spacing.md}]}>3. Review items</Text>
+              <Text style={[styles.sectionTitle, {marginTop: theme.spacing.md}]}>Review items</Text>
               <FlatList
                 data={cart}
                 keyExtractor={(item) => item.id}
@@ -174,7 +239,9 @@ export default function PickupCartModal({visible, onClose, rates = [], onConfirm
                     <View style={styles.cartItem}>
                       <View style={{flex: 1}}>
                         <Text style={styles.cartItemName}>{item.name}</Text>
-                        <Text style={styles.cartItemQty}>{wt} kg × ₹{rate} = ₹{Math.round(subtotal)}</Text>
+                        <Text style={styles.cartItemQty}>
+                          {formatKg(wt)} kg × ₹{rate} = ₹{Math.round(subtotal)}
+                        </Text>
                       </View>
                       <Pressable onPress={() => removeFromCart(item.id)} style={styles.removeBtn}>
                         <Trash2 size={18} color={theme.colors.danger} />
@@ -293,14 +360,44 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
   },
   weightInput: {
-    width: 80,
+    flex: 1,
+    height: 40,
+    paddingLeft: theme.spacing.sm,
+    paddingRight: 4,
+    fontSize: 14,
+    textAlign: 'right',
+  },
+  weightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepBtn: {
+    width: 38,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  stepBtnOn: {backgroundColor: 'rgba(37, 211, 102, 0.12)', borderColor: 'rgba(37, 211, 102, 0.35)'},
+  stepBtnOff: {backgroundColor: theme.colors.bgSoft, borderColor: theme.colors.border},
+  stepBtnText: {fontSize: 20, fontWeight: '700', color: theme.colors.text},
+  weightInputWrap: {
+    width: 96,
     height: 40,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    paddingHorizontal: theme.spacing.sm,
-    fontSize: 14,
-    textAlign: 'right',
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    marginHorizontal: 8,
+  },
+  kgSuffix: {
+    paddingRight: 10,
+    fontSize: 12,
+    fontWeight: '800',
+    color: theme.colors.textMuted,
   },
   summary: {
     marginTop: theme.spacing.lg,

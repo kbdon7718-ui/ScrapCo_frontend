@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Animated, Image, Pressable, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Animated, Pressable, StyleSheet, Text, View} from 'react-native';
+import {GoogleMap, MarkerF, useJsApiLoader} from '@react-google-maps/api';
 import {theme} from '../theme';
 import {MapPin, Navigation2} from 'lucide-react-native';
 import {getGoogleMapsApiKey} from '../utils/env';
@@ -14,8 +15,7 @@ export default function MapPlaceholder({
   onPressEnableLocation,
 }) {
   const pulseAnim = useRef(new Animated.Value(0)).current;
-  const [imgErrored, setImgErrored] = useState(false);
-  const [imgLoading, setImgLoading] = useState(false);
+  const [mapErrored, setMapErrored] = useState(false);
 
   useEffect(() => {
     Animated.loop(
@@ -33,57 +33,53 @@ export default function MapPlaceholder({
 
   const hasCoords = Boolean(coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number');
 
-  const staticMapUrl = useMemo(() => {
+  const apiKey = getGoogleMapsApiKey();
+  const {isLoaded, loadError} = useJsApiLoader({
+    id: 'scrapco-google-maps-home',
+    googleMapsApiKey: apiKey,
+  });
+
+  const center = useMemo(() => {
     if (!hasCoords) return null;
-    const apiKey = getGoogleMapsApiKey();
-    if (!apiKey) return null;
-    const lat = coords.latitude;
-    const lng = coords.longitude;
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
-      `${lat},${lng}`
-    )}&zoom=15&size=900x450&scale=2&markers=color:blue%7C${encodeURIComponent(`${lat},${lng}`)}&key=${encodeURIComponent(
-      apiKey
-    )}`;
+    return {lat: coords.latitude, lng: coords.longitude};
   }, [hasCoords, coords]);
 
   useEffect(() => {
-    setImgErrored(false);
-    setImgLoading(false);
-  }, [staticMapUrl]);
+    setMapErrored(false);
+  }, [apiKey]);
 
   return (
     <View style={styles.wrap}>
       {/* Map background */}
-      {staticMapUrl && !imgErrored ? (
-        <>
-          <Image
-            source={{uri: staticMapUrl}}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-            onLoadStart={() => setImgLoading(true)}
-            onLoadEnd={() => setImgLoading(false)}
-            onError={() => {
-              setImgLoading(false);
-              setImgErrored(true);
+      {apiKey && isLoaded && !loadError && center && !mapErrored ? (
+        <View style={StyleSheet.absoluteFill}>
+          <GoogleMap
+            mapContainerStyle={{width: '100%', height: '100%'}}
+            center={center}
+            zoom={15}
+            options={{
+              disableDefaultUI: true,
+              zoomControl: true,
+              clickableIcons: false,
+              gestureHandling: 'greedy',
             }}
-          />
-          {imgLoading ? (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator />
-              <Text style={styles.loadingText}>Loading map…</Text>
-            </View>
-          ) : null}
-        </>
+            onLoad={() => setMapErrored(false)}
+          >
+            <MarkerF position={center} />
+          </GoogleMap>
+        </View>
       ) : (
         <View style={styles.mapFallback}>
           <Text style={styles.mapFallbackText}>
-            {imgErrored
-              ? 'Map failed to load. Check Google key restrictions and enable Maps Static API.'
-              : loading
-                ? 'Detecting location…'
-                : hasCoords
+            {loading
+              ? 'Detecting location…'
+              : !hasCoords
+                ? 'Enable location to show live map'
+                : !apiKey
                   ? 'Add EXPO_PUBLIC_GOOGLE_MAPS_API_KEY to show map'
-                  : 'Enable location to show live map'}
+                  : loadError || mapErrored
+                    ? 'Google Maps failed to load. Check API key restrictions and enable Maps JavaScript API.'
+                    : 'Loading map…'}
           </Text>
 
           {!hasCoords && !loading && typeof onPressEnableLocation === 'function' ? (
@@ -160,19 +156,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.textMuted,
     fontWeight: '600',
-    fontSize: 12,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-  },
-  loadingText: {
-    textAlign: 'center',
-    color: theme.colors.textMuted,
-    fontWeight: '700',
     fontSize: 12,
   },
   enableBtn: {

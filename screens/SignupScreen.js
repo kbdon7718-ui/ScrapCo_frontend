@@ -42,9 +42,8 @@ export default function SignupScreen({ navigation }) {
     ui?.setLoading?.(true);
     signupWithEmail(name.trim(), email.trim(), password)
       .then(() => {
-        Alert.alert('Sign up successful', 'Please check your email for confirmation if required. Then login.', [
-          { text: 'OK', onPress: () => navigation.replace('Login') },
-        ]);
+        ui?.showInfo?.('Sign up successful. Please login.');
+        navigation.replace('Login');
       })
       .catch((e) => ui?.showError?.(authErrorMessage(e)))
       .finally(() => ui?.setLoading?.(false));

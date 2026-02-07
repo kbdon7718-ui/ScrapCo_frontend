@@ -1,8 +1,7 @@
 import React, {useContext, useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import GlassHeader from '../components/GlassHeader';
-import MapPlaceholder from '../components/MapPlaceholder';
 import HeroCard from '../components/HeroCard';
 import QuickActionGrid from '../components/QuickActionGrid';
 import PickupCartModal from '../components/PickupCartModal';
@@ -138,7 +137,13 @@ export default function HomeScreenV2({navigation}) {
 
   const hasActivePickup = useMemo(() => {
     const status = String(pickup?.status || '').toUpperCase();
-    return status === 'FINDING_VENDOR' || status === 'REQUESTED' || status === 'ACCEPTED' || status === 'ASSIGNED';
+    return (
+      status === 'FINDING_VENDOR' ||
+      status === 'REQUESTED' ||
+      status === 'ACCEPTED' ||
+      status === 'ASSIGNED' ||
+      status === 'ON_THE_WAY'
+    );
   }, [pickup]);
 
   function timeSlotFromNow() {
@@ -205,6 +210,7 @@ export default function HomeScreenV2({navigation}) {
     const s = String(pickup?.status || '').toUpperCase();
     if (s === 'FINDING_VENDOR' || s === 'REQUESTED') return 'Finding vendors...';
     if (s === 'ASSIGNED' || s === 'ACCEPTED') return 'Pickup confirmed!';
+    if (s === 'ON_THE_WAY') return 'Vendor is on the way';
     if (s === 'COMPLETED') return 'Last pickup done ✓';
     return 'Ready to pickup';
   }, [pickup]);
@@ -215,44 +221,16 @@ export default function HomeScreenV2({navigation}) {
         {/* Glass Header */}
         <GlassHeader title="ScrapCo" status={shortAddress(liveAddress) || statusMsg} />
 
-        {/* Live Tracker Map */}
-        <MapPlaceholder
-          coords={liveCoords}
-          active={hasActivePickup}
-          address={shortAddress(liveAddress)}
-          loading={loadingLive}
-          onPressEnableLocation={refreshLiveLocation}
-          onPressSend={() => {
-            // no dummy actions; keep as a no-op for now
-          }}
-        />
+        {/* Live Tracker Map (disabled to prevent crashes / map dependency) */}
+        <View style={styles.mapBlank} />
 
         {/* Hero Card for Instant Pickup */}
         <HeroCard
           title={'Instant Scrap\nPickup'}
           subtitle="BEST RATES GUARANTEED"
           onPress={() => {
-            if (!hasActivePickup) {
-              setCartModalVisible(true);
-              return;
-            }
-
-            Alert.alert(
-              'Active pickup found',
-              'You already have an active pickup. Do you want to create a new pickup request?',
-              [
-                {
-                  text: 'View status',
-                  onPress: () => navigation.navigate('Pickup Status', {pickupId: pickup?.id}),
-                },
-                {
-                  text: 'New pickup',
-                  style: 'default',
-                  onPress: () => setCartModalVisible(true),
-                },
-                {text: 'Cancel', style: 'cancel'},
-              ]
-            );
+            // Always allow creating another pickup request.
+            setCartModalVisible(true);
           }}
         />
 
@@ -275,6 +253,13 @@ export default function HomeScreenV2({navigation}) {
             <Text style={styles.activeId}>ID: {String(pickup.id).slice(0, 8)}...</Text>
             <Text style={styles.activeStatus}>Status: {String(pickup.status).toUpperCase()}</Text>
             <View style={{marginTop: theme.spacing.sm}} />
+
+            <Pressable
+              onPress={() => navigation.navigate('Pickup Status', {pickupId: pickup?.id})}
+              style={styles.viewStatusBtn}
+            >
+              <Text style={styles.viewStatusText}>View status</Text>
+            </Pressable>
           </View>
         ) : null}
       </ScrollView>
@@ -292,6 +277,14 @@ export default function HomeScreenV2({navigation}) {
 }
 
 const styles = StyleSheet.create({
+  mapBlank: {
+    height: 180,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.bgSoft,
+    marginTop: theme.spacing.md,
+  },
   activeCard: {
     backgroundColor: 'rgba(16, 185, 129, 0.08)',
     borderWidth: 1,
@@ -317,4 +310,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text,
   },
+  viewStatusBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(2, 132, 199, 0.20)',
+    backgroundColor: 'rgba(2, 132, 199, 0.08)',
+  },
+  viewStatusText: {fontWeight: '800', color: theme.colors.primary},
 });

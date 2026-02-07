@@ -157,7 +157,15 @@ export default function ProfileScreen() {
           <Row
             icon={Truck}
             label={t(lang, 'profile.bulk')}
-            onPress={() => Alert.alert(t(lang, 'profile.bulkSoonTitle'), t(lang, 'profile.bulkSoonBody'))}
+            onPress={() => {
+              // Jump to Home tab -> SchedulePickup screen
+              const tabs = navigation.getParent?.();
+              if (tabs?.navigate) {
+                tabs.navigate('Home', {screen: 'SchedulePickup'});
+                return;
+              }
+              navigation.navigate('SchedulePickup');
+            }}
           />
           <Row
             icon={Globe}

@@ -12,18 +12,16 @@
  */
 
 import {Platform} from 'react-native';
+import {getApiBase} from './env';
 
-// You can override this without code changes by setting:
-// EXPO_PUBLIC_API_BASE=http://<your-ip>:3000
-const ENV_BASE = typeof process !== 'undefined' ? process.env.EXPO_PUBLIC_API_BASE : undefined;
+const REMOTE_FALLBACK = 'https://scrapco-backend-8bix.onrender.com';
 
-// Default API base by platform:
-// - Web: backend is usually on the same machine -> localhost
+// Default API base by platform (dev only):
 // - Android emulator: 10.0.2.2 maps to host machine
-// - iOS simulator / others: localhost usually works
-export const API_BASE =
-  (ENV_BASE && String(ENV_BASE).trim()) ||
-  (Platform.OS === 'android' ? 'http://10.0.2.2:3006' : 'http://localhost:3006');
+// - iOS simulator / web: localhost usually works
+const DEV_FALLBACK = Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+
+export const API_BASE = getApiBase() || (__DEV__ ? DEV_FALLBACK : REMOTE_FALLBACK);
 
 async function parseJsonOrThrow(res) {
   const contentType = String(res.headers.get('content-type') || '').toLowerCase();

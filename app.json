@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ScrapCo",
-    "slug": "scrapco",
+    "name": "Scrapcustomer",
+    "slug": "scrapcustomer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +25,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "googleMapsApiKey": "AIzaSyATayMt6PgAJD9usHnTdewaYP1R0TrdRqM",
+      "eas": {
+        "projectId": "9492573f-4baa-4a91-b626-749c08f14fe4"
+      }
     }
   }
 }

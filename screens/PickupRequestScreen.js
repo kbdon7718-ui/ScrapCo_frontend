@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -17,7 +16,6 @@ import Card from '../components/Card';
 import Dropdown from '../components/Dropdown';
 import Input from '../components/Input';
 import Screen from '../components/Screen';
-import MapPicker from '../components/MapPicker';
 import GlassHeader from '../components/GlassHeader';
 
 import {AuthContext} from '../contexts/AuthContext';
@@ -38,7 +36,8 @@ export default function PickupRequestScreen({navigation}) {
   const [loadingTypes, setLoadingTypes] = useState(false);
 
   const [selectedTypeIds, setSelectedTypeIds] = useState([]);
-  const [weightKg, setWeightKg] = useState(0);
+  const [weightKg, setWeightKg] = useState(8);
+  const [weightText, setWeightText] = useState('8');
   const [ratesRows, setRatesRows] = useState([]);
   const [showAllTypes, setShowAllTypes] = useState(false);
 
@@ -203,22 +202,21 @@ export default function PickupRequestScreen({navigation}) {
     }
   }
 
-  function openMap() {
-    if (!coords) return;
-    const lat = coords.latitude;
-    const lng = coords.longitude;
-    const url = `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
-    Linking.openURL(url).catch(() => {
-      // ignore
-    });
-  }
-
   function validate() {
     if (!selectedTypes.length) return 'Please select at least one scrap type.';
     if (!Number.isFinite(Number(weightKg)) || Number(weightKg) <= 0) return 'Please enter an approximate weight.';
     if (!address.trim()) return 'Please enter pickup address.';
     if (!coords) return 'Please select a pickup location.';
     return null;
+  }
+
+  function setWeightFromText(val) {
+    const raw = String(val ?? '');
+    const cleaned = raw.replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, '');
+    setWeightText(cleaned);
+    const n = Number(cleaned);
+    if (Number.isFinite(n)) setWeightKg(Math.max(0, Math.min(500, n)));
+    else setWeightKg(0);
   }
 
   function toggleType(type) {
@@ -274,6 +272,7 @@ export default function PickupRequestScreen({navigation}) {
       ui?.showInfo?.('Pickup requested successfully');
       setSelectedTypeIds([]);
       setWeightKg(8);
+      setWeightText('8');
       if (resp?.pickupId) {
         navigation.navigate('Pickup Status', {pickupId: resp.pickupId});
       } else {
@@ -305,7 +304,7 @@ export default function PickupRequestScreen({navigation}) {
 
           <View style={{marginTop: theme.spacing.lg}}>
             <Card>
-              <Text style={styles.sectionTitle}>1) Scrap types (multi-select)</Text>
+              <Text style={styles.sectionTitle}>Scrap types (multi-select)</Text>
               {loadingTypes ? <ActivityIndicator /> : null}
               {!loadingTypes && availableTypes.length === 0 ? (
                 <Text style={styles.helperText}>No scrap types found in the database.</Text>
@@ -334,25 +333,55 @@ export default function PickupRequestScreen({navigation}) {
                 </View>
               ) : null}
 
-              <Text style={styles.sectionTitle}>2) Approximate weight</Text>
+              <Text style={styles.sectionTitle}>Approximate weight</Text>
               <Text style={styles.helperText}>This is only an estimate. Final amount depends on actual weight.</Text>
 
               <View style={styles.weightRow}>
                 <Pressable
-                  onPress={() => setWeightKg((w) => Math.max(0, Number(w || 0) - 1))}
+                  onPress={() => {
+                    const next = Math.max(0, Number(weightKg || 0) - 1);
+                    setWeightKg(next);
+                    setWeightText(String(next));
+                  }}
                   style={[styles.weightBtn, styles.weightBtnOff]}
                 >
                   <Text style={styles.weightBtnText}>−</Text>
                 </Pressable>
                 <View style={styles.weightValue}>
-                  <Text style={styles.weightValueText}>{Math.max(0, Number(weightKg) || 0)} kg</Text>
+                  <Input
+                    label={null}
+                    placeholder="e.g. 10"
+                    value={weightText}
+                    onChangeText={setWeightFromText}
+                    keyboardType="decimal-pad"
+                  />
+                  <Text style={styles.weightUnit}>kg</Text>
                 </View>
                 <Pressable
-                  onPress={() => setWeightKg((w) => Math.min(60, Number(w || 0) + 1))}
+                  onPress={() => {
+                    const next = Math.min(500, Number(weightKg || 0) + 1);
+                    setWeightKg(next);
+                    setWeightText(String(next));
+                  }}
                   style={[styles.weightBtn, styles.weightBtnOn]}
                 >
                   <Text style={styles.weightBtnText}>+</Text>
                 </Pressable>
+              </View>
+
+              <View style={{marginTop: theme.spacing.sm, flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
+                {[5, 10, 20, 40, 60].map((v) => (
+                  <Pressable
+                    key={String(v)}
+                    onPress={() => {
+                      setWeightKg(v);
+                      setWeightText(String(v));
+                    }}
+                    style={[styles.chip, Number(weightKg) === v ? styles.chipOn : styles.chipOff]}
+                  >
+                    <Text style={[styles.chipText, Number(weightKg) === v ? styles.chipTextOn : styles.chipTextOff]}>{v} kg</Text>
+                  </Pressable>
+                ))}
               </View>
 
               <View style={{marginTop: theme.spacing.md}}>
@@ -362,7 +391,7 @@ export default function PickupRequestScreen({navigation}) {
             </Card>
 
             <Card>
-              <Text style={styles.sectionTitle}>3) Pickup location</Text>
+              <Text style={styles.sectionTitle}>Pickup location</Text>
               {loadingAddresses ? <ActivityIndicator /> : null}
               {addressOptions.length ? (
                 <Dropdown
@@ -401,26 +430,15 @@ export default function PickupRequestScreen({navigation}) {
                   <Text style={styles.coords}>
                     Location set: {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}
                   </Text>
-                  <View style={{marginTop: theme.spacing.sm}}>
-                    <Button label="Open in Maps" variant="secondary" onPress={openMap} />
-                  </View>
                 </View>
               ) : null}
 
-              <MapPicker
-                value={coords}
-                onChange={(next) => {
-                  setCoords(next);
-                }}
-                onAddressChange={(nextAddr) => {
-                  if (!nextAddr) return;
-                  setAddress(String(nextAddr));
-                }}
-              />
+              {/* Map disabled (prevents crashes / Google Maps dependency). */}
+              <View style={styles.mapBlank} />
             </Card>
 
             <Card>
-              <Text style={styles.sectionTitle}>4) Time slot</Text>
+              <Text style={styles.sectionTitle}>Time slot</Text>
               <View style={styles.timeRow}>
                 {['Morning', 'Afternoon', 'Evening'].map((slot) => (
                   <View key={slot} style={styles.timePillWrap}>
@@ -482,6 +500,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 12,
     backgroundColor: theme.colors.card,
+  },
+  mapBlank: {
+    marginTop: theme.spacing.md,
+    height: 160,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.bgSoft,
   },
   weightValueText: {fontSize: 16, fontWeight: '600', color: theme.colors.text},
   earningsText: {fontSize: 14, fontWeight: '600', color: theme.colors.text},
