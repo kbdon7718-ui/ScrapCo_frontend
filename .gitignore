@@ -1,38 +1,24 @@
-<<<<<<< HEAD
-# Dependencies
+.expo/
+.expo-shared/
+
 node_modules/
 
-# Expo local state
-.expo/
+dist/
+web-build/
+coverage/
 
-# Builds
-/dist/
-/web-build/
-
-# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.log
+
+.DS_Store
 
 # Local env (keep .env.example committed)
 .env
 .env.*
 !.env.example
 
-# OS
-.DS_Store
-=======
-.expo/
-node_modules/
-.DS_Store
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.expo-shared/
-dist/
-web-build/
-coverage/
+# Common local-only env variants
 .env.local
 .env.*.local
->>>>>>> 9cb2e93950d01b5fd70745293e347ad295f5c8ef

@@ -14,14 +14,25 @@
 import {Platform} from 'react-native';
 import {getApiBase} from './env';
 
-const REMOTE_FALLBACK = 'https://scrapco-backend-8bix.onrender.com';
-
 // Default API base by platform (dev only):
 // - Android emulator: 10.0.2.2 maps to host machine
 // - iOS simulator / web: localhost usually works
 const DEV_FALLBACK = Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
 
-export const API_BASE = getApiBase() || (__DEV__ ? DEV_FALLBACK : REMOTE_FALLBACK);
+function resolveApiBase() {
+  const configured = getApiBase();
+  if (configured) return configured;
+
+  if (__DEV__) return DEV_FALLBACK;
+
+  throw new Error(
+    'Missing EXPO_PUBLIC_API_BASE. Set it in frontend/.env (or your deploy env vars) and rebuild/restart the app.'
+  );
+}
+
+export function getResolvedApiBase() {
+  return resolveApiBase();
+}
 
 async function parseJsonOrThrow(res) {
   const contentType = String(res.headers.get('content-type') || '').toLowerCase();
@@ -50,7 +61,7 @@ async function parseJsonOrThrow(res) {
  * @returns {Object} the JSON response from the server
  */
 export async function postPickup(pickup) {
-  const url = `${API_BASE}/api/pickups`;
+  const url = `${resolveApiBase()}/api/pickups`;
 
   // If Supabase auth is used, include the access token so the backend can enforce RLS.
   // (When bypass mode is enabled, callers can omit this.)
@@ -71,7 +82,7 @@ export async function postPickup(pickup) {
 }
 
 export async function getPickupStatus({pickupId, accessToken}) {
-  const url = `${API_BASE}/api/pickups/${encodeURIComponent(String(pickupId))}`;
+  const url = `${resolveApiBase()}/api/pickups/${encodeURIComponent(String(pickupId))}`;
   const res = await fetch(url, {
     method: 'GET',
     headers: {
@@ -82,7 +93,7 @@ export async function getPickupStatus({pickupId, accessToken}) {
 }
 
 export async function cancelPickup({pickupId, accessToken}) {
-  const url = `${API_BASE}/api/pickups/${encodeURIComponent(String(pickupId))}/cancel`;
+  const url = `${resolveApiBase()}/api/pickups/${encodeURIComponent(String(pickupId))}/cancel`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -95,7 +106,7 @@ export async function cancelPickup({pickupId, accessToken}) {
 }
 
 export async function findVendorAgain({pickupId, accessToken}) {
-  const url = `${API_BASE}/api/pickups/${encodeURIComponent(String(pickupId))}/find-vendor`;
+  const url = `${resolveApiBase()}/api/pickups/${encodeURIComponent(String(pickupId))}/find-vendor`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
