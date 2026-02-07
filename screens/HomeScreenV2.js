@@ -221,7 +221,11 @@ export default function HomeScreenV2({navigation}) {
         {/* Glass Header */}
         <GlassHeader title="ScrapCo" status={shortAddress(liveAddress) || statusMsg} />
 
+<<<<<<< HEAD
         {/* Live Tracker Map (disabled to prevent crashes / map dependency) */}
+=======
+        {/* Live Tracker Map (disabled to prevent crashes / maps dependency). */}
+>>>>>>> 9cb2e93950d01b5fd70745293e347ad295f5c8ef
         <View style={styles.mapBlank} />
 
         {/* Hero Card for Instant Pickup */}
@@ -278,12 +282,22 @@ export default function HomeScreenV2({navigation}) {
 
 const styles = StyleSheet.create({
   mapBlank: {
+<<<<<<< HEAD
     height: 180,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.bgSoft,
     marginTop: theme.spacing.md,
+=======
+    height: 230,
+    marginTop: theme.spacing.md,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: theme.radius.xl,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+>>>>>>> 9cb2e93950d01b5fd70745293e347ad295f5c8ef
   },
   activeCard: {
     backgroundColor: 'rgba(16, 185, 129, 0.08)',

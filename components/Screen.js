@@ -16,6 +16,7 @@ export default function Screen({children, variant = 'plain'}) {
   const colors = useMemo(() => getAppColors(prefs?.resolvedTheme || 'light'), [prefs?.resolvedTheme]);
 
   return (
+<<<<<<< HEAD
     <SafeAreaView
       edges={['top', 'left', 'right']}
       style={[styles.safe, {backgroundColor: isSoft ? colors.bgSoft : colors.bg}]}
@@ -26,6 +27,13 @@ export default function Screen({children, variant = 'plain'}) {
           {
             paddingBottom: theme.spacing.lg + TAB_BAR_HEIGHT + TAB_BAR_GAP + (insets?.bottom || 0),
           },
+=======
+    <SafeAreaView edges={['top', 'left', 'right']} style={[styles.safe, {backgroundColor: isSoft ? colors.bgSoft : colors.bg}]}>
+      <View
+        style={[
+          styles.inner,
+          {paddingBottom: theme.spacing.lg + TAB_BAR_HEIGHT + TAB_BAR_GAP + (insets?.bottom || 0)},
+>>>>>>> 9cb2e93950d01b5fd70745293e347ad295f5c8ef
         ]}
       >
         {children}
